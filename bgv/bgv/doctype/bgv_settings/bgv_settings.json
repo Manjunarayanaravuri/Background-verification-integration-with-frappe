@@ -1,0 +1,95 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2026-02-24 17:31:30.022495",
+ "default_view": "List",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "account",
+  "username",
+  "password",
+  "mode",
+  "endpoint_url",
+  "postback_url",
+  "postback_username",
+  "postback_password",
+  "postback_types"
+ ],
+ "fields": [
+  {
+   "fieldname": "account",
+   "fieldtype": "Data",
+   "label": "account"
+  },
+  {
+   "fieldname": "username",
+   "fieldtype": "Data",
+   "label": "username"
+  },
+  {
+   "fieldname": "password",
+   "fieldtype": "Password",
+   "label": "password"
+  },
+  {
+   "fieldname": "mode",
+   "fieldtype": "Select",
+   "label": "Mode",
+   "options": "TEST\nPROD"
+  },
+  {
+   "fieldname": "endpoint_url",
+   "fieldtype": "Data",
+   "label": "Endpoint url",
+   "options": "URL"
+  },
+  {
+   "fieldname": "postback_url",
+   "fieldtype": "Data",
+   "label": "Postback URL"
+  },
+  {
+   "fieldname": "postback_username",
+   "fieldtype": "Data",
+   "label": "Postback Username"
+  },
+  {
+   "fieldname": "postback_password",
+   "fieldtype": "Password",
+   "label": "Postback Password"
+  },
+  {
+   "fieldname": "postback_types",
+   "fieldtype": "Select",
+   "label": "Postback Types",
+   "options": "IPC\nIPV\nOCR\nICR\nDEL\nCETA\nADD\nIPV::ICR::DEL::CETA\nIPV::ICR::DEL::CETA::ADD\nIPC::IPV::OCR"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "issingle": 1,
+ "links": [],
+ "modified": "2026-03-12 23:46:52.126142",
+ "modified_by": "Administrator",
+ "module": "bgv",
+ "name": "BGV Settings",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "print": 1,
+   "read": 1,
+   "role": "System Manager",
+   "share": 1,
+   "write": 1
+  }
+ ],
+ "row_format": "Dynamic",
+ "rows_threshold_for_grid_search": 20,
+ "sort_field": "creation",
+ "sort_order": "DESC",
+ "states": []
+}
