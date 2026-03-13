@@ -1,13 +1,21 @@
 import frappe
 import requests
+import json
 import xml.etree.ElementTree as ET
 
 
 @frappe.whitelist(allow_guest=True)
-def place_bgv_order(employee):
+def place_bgv_order(employee, selected_checks=None):
 
     if not employee:
         frappe.throw("Employee is required")
+
+    # Parse selected_checks — comes as JSON string from client
+    if isinstance(selected_checks, str):
+        selected_checks = json.loads(selected_checks)
+
+    if not selected_checks or len(selected_checks) == 0:
+        frappe.throw("Please select at least one BGV Check Type")
 
     # Fetch BGV Settings
     settings = frappe.get_single("BGV Settings")
@@ -39,12 +47,19 @@ def place_bgv_order(employee):
     # Get employee email
     emp_email = emp.personal_email or emp.company_email or ""
 
+    # Build dynamic subOrders from selected checks
+    sub_orders_xml = ""
+    for check in selected_checks:
+        sapphire_code = check.get("sapphire_code", "")
+        if sapphire_code:
+            sub_orders_xml += f'\n    <subOrder type="{sapphire_code}"/>'
+
     frappe.log_error(
-        f"Placing BGV Order for Employee: {employee}",
+        f"Placing BGV Order for Employee: {employee} with checks: {selected_checks}",
         "BGV Place Order Debug"
     )
 
-    # Build XML payload
+    # Build XML payload — all values from BGV Settings
     xml_payload = f"""<?xml version="1.0" encoding="UTF-8"?>
 <Accio_Order>
 
@@ -80,7 +95,7 @@ def place_bgv_order(employee):
       <portalfromapplicant>Y</portalfromapplicant>
     </subject>
 
-    <subOrder type="National Alias Criminal"/>
+    {sub_orders_xml}
 
     <postBackInfo>
       <guID>{doc.name}</guID>
@@ -212,7 +227,7 @@ def receive_webhook():
     if "candidate" in order_state.lower():
         postback_type = "IPC"  # Waiting for applicant
     elif "inprogress" in order_state.lower() and "candidate" not in order_state.lower():
-        postback_type = "IPV"  # Order went active / in progress vendor
+        postback_type = "IPV"  # Order went active
     elif "complete" in order_state.lower():
         postback_type = "OCR"  # Order fully complete
     else:
@@ -267,13 +282,11 @@ def receive_webhook():
         if portal_url_node is not None and portal_url_node.text:
             doc.applicant_portal_url = portal_url_node.text.strip()
             frappe.log_error(
-                f"Applicant Portal URL: {doc.applicant_portal_url}",
+                f"Applicant Portal URL saved: {doc.applicant_portal_url}",
                 "Webhook IPC Portal URL"
             )
 
-        # Save raw postback payload
         doc.raw_result_response = payload
-
         doc.status = "Waiting for Applicant"
         doc.trigger_count = int(doc.trigger_count or 0) + 1
         doc.save(ignore_permissions=True)
@@ -302,9 +315,7 @@ def receive_webhook():
             "Webhook IPV"
         )
 
-        # Save raw postback payload
         doc.raw_result_response = payload
-
         doc.status = "In Progress"
         doc.trigger_count = int(doc.trigger_count or 0) + 1
         doc.save(ignore_permissions=True)
@@ -336,7 +347,6 @@ def receive_webhook():
         # Save report URLs from postback
         report_html = root.find(".//reportURL/HTML")
         report_pdf_color = root.find(".//reportURL/PDF_Color")
-        report_pdf_bw = root.find(".//reportURL/PDF_BW")
 
         if report_pdf_color is not None and report_pdf_color.text:
             doc.bgv_document_pdf_link = report_pdf_color.text.strip()
@@ -346,6 +356,10 @@ def receive_webhook():
             )
         elif report_html is not None and report_html.text:
             doc.bgv_document_pdf_link = report_html.text.strip()
+            frappe.log_error(
+                f"HTML Report URL saved: {doc.bgv_document_pdf_link}",
+                "Webhook OCR Report URL"
+            )
 
         # Call getOrderResults to get full result XML
         xml_payload = f"""<?xml version="1.0" encoding="UTF-8"?>
@@ -410,7 +424,6 @@ def receive_webhook():
             "Webhook Unknown Type"
         )
 
-        # Save raw payload and increment trigger count
         doc.raw_result_response = payload
         doc.trigger_count = int(doc.trigger_count or 0) + 1
         doc.save(ignore_permissions=True)
