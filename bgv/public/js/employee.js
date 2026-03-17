@@ -101,10 +101,7 @@ frappe.ui.form.on("Employee", {
 
                             // Show selected checks summary
                             let selected_names = selected.map(s => s.check_name).join(", ");
-                            frappe.show_alert({
-                                message: `Placing BGV Order with ${selected.length} check(s): ${selected_names}`,
-                                indicator: "blue"
-                            });
+                            frappe.show_alert("placing BGV Order for: " + selected_names, 5);
 
                             // Call API
                             frappe.call({

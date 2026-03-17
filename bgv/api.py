@@ -73,7 +73,7 @@ def place_bgv_order(employee, selected_checks=None):
 
   <placeOrder>
 
-    <package>Basic All</package>
+    <package>A LA CARTE</package>
     <IncludeDefaultProducts/>
     <preselect_all_included_products/>
     <IncludePreselectedProducts/>
@@ -100,6 +100,8 @@ def place_bgv_order(employee, selected_checks=None):
     <postBackInfo>
       <guID>{doc.name}</guID>
       <URL>{settings.postback_url}</URL>
+      <account>{settings.account}</account>
+      <username>{settings.username}</username>
       <postback_types>{postback_types}</postback_types>
     </postBackInfo>
 
@@ -124,7 +126,6 @@ def place_bgv_order(employee, selected_checks=None):
         try:
             root = ET.fromstring(response.text)
 
-            # Sapphire returns <order orderID="..."> on place order
             order = root.find(".//order")
             if order is not None:
                 doc.accio_order_id = order.attrib.get("orderID")
@@ -254,12 +255,12 @@ def receive_webhook():
 
     if not bgv_order_name:
         frappe.log_error(
-            f"No BGV Order found for orderID: {order_id}",
-            "Webhook Error"
+            f"No BGV Order found for orderID: {order_id} — likely old test order",
+            "Webhook Old Order Skip"
         )
         return {
-            "status": "error",
-            "message": f"BGV Order not found for orderID: {order_id}"
+            "status": "skipped",
+            "message": f"No BGV Order found for orderID: {order_id}"
         }
 
     doc = frappe.get_doc("BGV Order", bgv_order_name)
